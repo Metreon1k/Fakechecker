@@ -1,5 +1,17 @@
 $ErrorActionPreference = "SilentlyContinue"
 
+# Вывод ASCII арта в начале
+Clear-Host
+$Logo = @"
+ _____      _        _____ _                
+|  ___|_ _| | _____|_   _(_)_ __ ___   ___ 
+| |_ / _` | |/ / _ \ | | | | '_ ` _ \ / _ \
+|  _| (_| |   <  __/ | | | | | | | | |  __/
+|_|  \__,_|_|\_\___| |_| |_|_| |_| |_|\___|
+"@
+Write-Host $Logo -ForegroundColor Cyan
+Write-Host "" # Пустая строка для отступа
+
 function Get-Signature {
     param ([string[]]$FilePath)
 
@@ -66,6 +78,7 @@ $FilteredBam = $Bam | Where-Object {
 } | Sort-Object SortDate -Descending
 
 if ($FilteredBam) {
+    Write-Host "--- Found potentially suspicious entries ---`n" -ForegroundColor Gray
     $FilteredBam | ForEach-Object {
         [PSCustomObject]@{
             'Time' = $_.Time
@@ -86,5 +99,5 @@ if ($FilteredBam) {
         }
     }
 } else {
-    Write-Host "No filtered entries found." -ForegroundColor Green
+    Write-Host "No filtered entries found. System looks clean." -ForegroundColor Green
 }

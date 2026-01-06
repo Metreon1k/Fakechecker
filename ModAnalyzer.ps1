@@ -1,8 +1,13 @@
 Clear-Host
-Write-Host "Habibi Mod Analyzer" -ForegroundColor Yellow
-Write-Host "Made by " -ForegroundColor DarkGray -NoNewline
-Write-Host "HadronCollision"
-Write-Host
+$Logo = @"
+ _____      _        _____ _                
+|  ___|_ _| | _____|_   _(_)_ __ ___   ___ 
+| |_ / _` | |/ / _ \ | | | | '_ ` _ \ / _ \
+|  _| (_| |   <  __/ | | | | | | | | |  __/
+|_|  \__,_|_|\_\___| |_| |_|_| |_| |_|\___|
+"@
+Write-Host $Logo -ForegroundColor Cyan
+Write-Host "" # Пустая строка для отступа
 
 $defaultMods = "$env:USERPROFILE\AppData\Roaming\.minecraft\mods"
 $mods = $defaultMods

@@ -1,11 +1,7 @@
-# Запускать от Администратора
-
+# Запускать строго от Администратора
 $ErrorActionPreference = "SilentlyContinue"
 
-
-
-# Твои стринги (я добавил обработку твоей строки с ! и !0!)
-
+# Твой список сигнатур
 $sigs = @(
     "!2023/07/03:22:01:11!0!",
     "2023/05/09:19 10 04",
@@ -18,92 +14,60 @@ $sigs = @(
     "2024/05/31:21:46:54"
 )
 
-
-
 $pd64 = "$env:TEMP\procdump64.exe"
-
 $dumpFile = "$env:TEMP\dps_final.dmp"
 
-
-
 if (!(Test-Path $pd64)) {
-
+    Write-Host "[*] Загрузка ProcDump64..." -ForegroundColor Gray
     Invoke-WebRequest -Uri "https://live.sysinternals.com/procdump64.exe" -OutFile $pd64 -UseBasicParsing
-
 }
-
-
 
 $pid = (Get-WmiObject Win32_Service | Where-Object { $_.Name -eq "DPS" }).ProcessId
+if (!$pid) { Write-Host "[-] Служба DPS не найдена!" -ForegroundColor Red; exit }
 
-if (!$pid) { Write-Host "[-] DPS не найден" -ForegroundColor Red; exit }
-
-
-
-Write-Host "[>>>] Дамп DPS (PID: $pid)..." -ForegroundColor Cyan
-
+Write-Host "[>>>] Создание дампа DPS (PID: $pid)..." -ForegroundColor Cyan
 & $pd64 -ma $pid $dumpFile -accepteula -nobanner
 
+if (!(Test-Path $dumpFile)) { Write-Host "[-] Ошибка: Дамп не был создан." -ForegroundColor Red; exit }
 
-
-if (!(Test-Path $dumpFile)) { Write-Host "[-] Дамп не создался" -ForegroundColor Red; exit }
-
-
-
-# Читаем дамп как массив байтов
-
+Write-Host "[*] Чтение данных памяти..." -ForegroundColor Gray
 $bytes = [System.IO.File]::ReadAllBytes($dumpFile)
 
-
-
-# Декодируем в разные форматы для поиска
-
+# Декодируем один раз для экономии ресурсов
 $methods = @{
-
     "Unicode" = [System.Text.Encoding]::Unicode.GetString($bytes)
-
     "ASCII"   = [System.Text.Encoding]::ASCII.GetString($bytes)
-
-    "UTF8"    = [System.Text.Encoding]::UTF8.GetString($bytes)
-
 }
-
-
 
 Write-Host "[*] Поиск сигнатур..." -ForegroundColor Gray
-
-
+$foundList = @()
 
 foreach ($s in $sigs) {
-
-    $found = $false
-
-    # Убираем лишние ! и !0! для поиска самого тела даты, если оно там есть
-
+    # Сохраняем оригинальный вид для вывода, но чистим для поиска
     $cleanSig = $s.Trim('!')
-
     if ($cleanSig.EndsWith("!0!")) { $cleanSig = $cleanSig.Replace("!0!", "") }
 
-
-
     foreach ($method in $methods.Keys) {
-
         if ($methods[$method].Contains($cleanSig)) {
-
-            Write-Host "[!!!] ДЕТЕКТ: $cleanSig (Найдено в кодировке: $method)" -ForegroundColor Red -BackgroundColor Black
-
-            $found = $true
-
-            break
-
+            Write-Host "[!!!] НАЙДЕНО: $s" -ForegroundColor Red -BackgroundColor Black
+            $foundList += $s
+            break # Нашли в одной кодировке, переходим к следующей сигнатуре
         }
-
     }
-
 }
 
-
-
+# Очистка
 Remove-Item $dumpFile -Force
+
+# Итоговый отчет
+Write-Host "`n--- ИТОГО ---" -ForegroundColor Cyan
+if ($foundList.Count -gt 0) {
+    Write-Host "Обнаружено совпадений: $($foundList.Count)" -ForegroundColor Red
+    foreach ($item in $foundList) {
+        Write-Host " [+] $item" -ForegroundColor Red
+    }
+} else {
+    Write-Host "Ни одной сигнатуры не обнаружено." -ForegroundColor Green
+}
 
 Write-Host "`n[+] Проверка завершена." -ForegroundColor Cyan

@@ -33,7 +33,7 @@ $fakerIndicators = @()
 
 Write-Host ""
 Write-Host "Hotspot Detections for Fakers" -ForegroundColor Cyan
-Write-Host "Made with love by lily<3" -ForegroundColor Cyan
+Write-Host "Made with love by 52525tgsdg3<3" -ForegroundColor Cyan
 Write-Host ""
 Write-Host ""
 
